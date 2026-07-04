@@ -55,6 +55,14 @@ public class BookController {
         return ResponseEntity.ok(list);
     }
 
+     @GetMapping("/total")
+    public ResponseEntity<Integer> getTotalBook()
+    {
+        int data =service.getTotalBook();
+        return ResponseEntity.ok(data);
+    }
+    
+    
     @PostMapping("/save")
  public ResponseEntity<Book> addBook(
             @RequestParam String bookName,
@@ -122,6 +130,8 @@ public ResponseEntity<Book> updateBook(
         service.delete(id);
       
     }
+    
+    
     
     
     

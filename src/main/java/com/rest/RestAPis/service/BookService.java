@@ -41,6 +41,13 @@ public class BookService {
         return repo.findAll(pageble);
     }
 
+    
+    public int getTotalBook()
+    {
+        return (int) repo.count();
+    }
+    
+    
 public Book addBook(
             String bookName,
             double price,
