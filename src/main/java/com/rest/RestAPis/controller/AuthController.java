@@ -71,6 +71,7 @@ public class AuthController {
         user.setPassword(
                 passwordEncoder.encode(user.getPassword())
         );
+        user.setRole("user");
         User u = repo.save(user);
 
         if (u == null) {
