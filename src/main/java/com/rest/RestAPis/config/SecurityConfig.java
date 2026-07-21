@@ -26,50 +26,60 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    
     @Autowired
-private JwtFilter jwtFilter;
-    
-    @Bean
-public SecurityFilterChain securityFilterChain(
-        HttpSecurity http) throws Exception {
+    private JwtFilter jwtFilter;
 
-    return http
-            .cors(cors->{})
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**","/cloudinary/**")
-                .permitAll()
-                .requestMatchers("/swagger-ui/**","/v3/api-docs/**")
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
+
+        return http
+                .cors(cors -> {
+                })
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/auth/**",
+                        "/cloudinary/**",
+                        "/oauth2/**",
+                        "/login/oauth2/**"
+                ).permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                 .permitAll()
                 .requestMatchers("/admin/**")
                 .hasRole("ADMIN")
                 .requestMatchers("/book/**")
-                .hasAnyRole("USER","ADMIN")
+                .hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/review/**")
-                .hasAnyRole("USER","ADMIN")
+                .hasAnyRole("USER", "ADMIN")
                 .anyRequest()
                 .authenticated()
-        )
-        .sessionManagement(session ->
-                session.sessionCreationPolicy(
+                )
+                .oauth2Login(oauth -> oauth
+                .successHandler(oAuth2SuccessHandler)
+                .failureHandler((request, response, exception) -> {
+                    exception.printStackTrace();
+                    response.sendRedirect("/login?error");
+                })
+                )
+                .sessionManagement(session
+                        -> session.sessionCreationPolicy(
                         SessionCreationPolicy.STATELESS))
-        .addFilterBefore(
-                jwtFilter,
-                    UsernamePasswordAuthenticationFilter.class)
-        .build();
-}
-    
-    @Bean
-public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration config)
-        throws Exception {
+                .addFilterBefore(
+                        jwtFilter,
+                        UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
 
-    return config.getAuthenticationManager();
-}
-    
     @Bean
-public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-}
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config)
+            throws Exception {
+
+        return config.getAuthenticationManager();
+    }
+
 }
