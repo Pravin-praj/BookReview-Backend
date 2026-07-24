@@ -13,7 +13,6 @@ import com.rest.RestAPis.dao.EmailOtpRepository;
 import com.rest.RestAPis.entities.EmailOtp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;

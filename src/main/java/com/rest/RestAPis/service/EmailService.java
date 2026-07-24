@@ -21,18 +21,32 @@ public class EmailService {
 
     public void sendOtp(String toEmail, String otp) {
 
-        SimpleMailMessage message = new SimpleMailMessage();
+        try {
 
-        message.setTo(toEmail);
-        message.setSubject("Book Review System - Email Verification");
+            System.out.println("Sending OTP to: " + toEmail);
 
-        message.setText(
-                "Hello,\n\n"
-                + "Your OTP for email verification is : " + otp
-                + "\n\nThis OTP is valid for 5 minutes."
-                + "\n\nThank You!"
-        );
+            SimpleMailMessage message = new SimpleMailMessage();
 
-        mailSender.send(message);
+            message.setTo(toEmail);
+            message.setSubject("Book Review System - Email Verification");
+
+            message.setText(
+                    "Hello,\n\n"
+                    + "Your OTP for email verification is : " + otp
+                    + "\n\nThis OTP is valid for 5 minutes."
+                    + "\n\nThank You!"
+            );
+
+            mailSender.send(message);
+
+            System.out.println("Email sent successfully.");
+
+        } catch (Exception e) {
+
+            System.out.println("EMAIL SENDING FAILED");
+            e.printStackTrace();
+
+            throw e;
+        }
     }
 }
