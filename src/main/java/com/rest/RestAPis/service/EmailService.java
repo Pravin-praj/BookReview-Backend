@@ -19,34 +19,27 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendOtp(String toEmail, String otp) {
+   public void sendOtp(String toEmail, String otp) {
 
-        try {
+    try {
 
-            System.out.println("Sending OTP to: " + toEmail);
+        System.out.println("Sending OTP to: " + toEmail);
 
-            SimpleMailMessage message = new SimpleMailMessage();
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Book Review System - Email Verification");
+        message.setText("Your OTP is: " + otp);
 
-            message.setTo(toEmail);
-            message.setSubject("Book Review System - Email Verification");
+        System.out.println("Before mailSender.send()");
 
-            message.setText(
-                    "Hello,\n\n"
-                    + "Your OTP for email verification is : " + otp
-                    + "\n\nThis OTP is valid for 5 minutes."
-                    + "\n\nThank You!"
-            );
+        mailSender.send(message);
 
-            mailSender.send(message);
+        System.out.println("After mailSender.send()");
+        System.out.println("Email sent successfully.");
 
-            System.out.println("Email sent successfully.");
-
-        } catch (Exception e) {
-
-            System.out.println("EMAIL SENDING FAILED");
-            e.printStackTrace();
-
-            throw e;
-        }
+    } catch (Exception e) {
+        System.out.println("EMAIL ERROR");
+        e.printStackTrace();
     }
+}
 }
