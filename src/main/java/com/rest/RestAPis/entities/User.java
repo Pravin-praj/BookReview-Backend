@@ -32,6 +32,8 @@ public class User {
     private String password;
 
     private String role;
+    
+    private boolean enabled;
 
     public User(Long id, String name, String email, String password,String role) {
         this.id = id;
@@ -82,6 +84,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
     
 }

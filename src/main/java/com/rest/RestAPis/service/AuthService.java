@@ -66,19 +66,14 @@ public LoginResponse login(LoginRequest request) {
     ));
     
     
-    
-    
     User user = repo.findByEmail(request.getEmail())
                 .orElseThrow(() ->
                     new RuntimeException("User not found"));
     
-//    boolean match = passwordEncoder.matches(
-//            request.getPassword(),
-//            user.getPassword());
-//
-//    if (!match) {
-//        throw new RuntimeException("Invalid password");
-//    }
+    if (!user.isEnabled()) {
+    throw new RuntimeException("Please verify your email before logging in.");
+}
+    
 
 String token = jwtUtil.generateToken(
         user.getEmail(),
@@ -88,6 +83,6 @@ String token = jwtUtil.generateToken(
      Long id=user.getId();
     System.out.println("Token Generated");
 
-    return new LoginResponse(token,user.getRole(),id);
+    return new LoginResponse(token,user.getRole(),id); 
 }
 }

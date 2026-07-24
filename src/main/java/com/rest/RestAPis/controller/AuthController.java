@@ -5,10 +5,15 @@
 package com.rest.RestAPis.controller;
 
 import com.rest.RestAPis.dao.UserRepository;
+import com.rest.RestAPis.dto.ForgotPasswordRequest;
 import com.rest.RestAPis.dto.LoginRequest;
 import com.rest.RestAPis.dto.LoginResponse;
+import com.rest.RestAPis.dto.OtpRequest;
+import com.rest.RestAPis.dto.ResetPasswordRequest;
 import com.rest.RestAPis.entities.User;
 import com.rest.RestAPis.service.AuthService;
+import com.rest.RestAPis.service.EmailService;
+import com.rest.RestAPis.service.OtpService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +45,15 @@ public class AuthController {
     private UserRepository repo;
     @Autowired
     private PasswordEncoder passwordEncoder;
+     @Autowired
+    private OtpService otpService;
+ @Autowired
+    private EmailService emailService;
 
+     
+     
+     
+     
     @GetMapping("/users")
     public ResponseEntity<List<User>> getALL()
     {
@@ -66,24 +79,105 @@ public class AuthController {
         return ResponseEntity.ok(u);
     }
     
-    @PostMapping("/signup")
-    public ResponseEntity<User> signup(@RequestBody User user) {
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword())
-        );
-        user.setRole("USER");
-        User u = repo.save(user);
+   @PostMapping("/signup")
+public ResponseEntity<?> signup(@RequestBody User user) {
 
-        if (u == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+    user.setPassword(passwordEncoder.encode(user.getPassword()));
+    user.setRole("USER");
+    user.setEnabled(false);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(u);
+    User savedUser = repo.save(user);
+
+    String otp = otpService.generateOtp();
+
+    otpService.saveOtp(savedUser.getEmail(), otp);
+
+    emailService.sendOtp(savedUser.getEmail(), otp);
+
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body("Registration successful. Please verify your email using the OTP sent to your email.");
+}
+ 
+
+
+@PostMapping("/forgot-password")
+public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+
+    User user = repo.findByEmail(request.getEmail())
+            .orElseThrow(() ->
+                    new RuntimeException("User not found"));
+
+    String otp = otpService.generateOtp();
+
+    otpService.saveOtp(user.getEmail(), otp);
+
+    emailService.sendOtp(user.getEmail(), otp);
+
+    return ResponseEntity.ok("OTP sent successfully.");
+
+}
+
+
+@PostMapping("/verify-otp")
+public ResponseEntity<?> verifyOtp(@RequestBody OtpRequest request) {
+
+    boolean verified = otpService.verifyOtp(
+            request.getEmail(),
+            request.getOtp()
+    );
+
+    if (!verified) {
+
+        return ResponseEntity
+                .badRequest()
+                .body("Invalid or Expired OTP");
+
     }
 
-    
+    User user = repo.findByEmail(request.getEmail())
+            .orElseThrow(() ->
+                    new RuntimeException("User Not Found"));
+
+    user.setEnabled(true);
+
+    repo.save(user);
+
+    return ResponseEntity.ok("Email Verified Successfully");
+
+}
+
+
+@PostMapping("/reset-password")
+public ResponseEntity<?> resetPassword(
+        @RequestBody ResetPasswordRequest request) {
+
+    boolean verified = otpService.verifyOtp(
+            request.getEmail(),
+            request.getOtp()
+    );
+
+    if (!verified) {
+
+        return ResponseEntity.badRequest()
+                .body("Invalid or Expired OTP");
+
+    }
+
+    User user = repo.findByEmail(request.getEmail())
+            .orElseThrow(() ->
+                    new RuntimeException("User not found"));
+
+    user.setPassword(
+            passwordEncoder.encode(request.getNewPassword())
+    );
+
+    repo.save(user);
+
+    return ResponseEntity.ok("Password changed successfully.");
+
+}
+
+
 @PostMapping("/login")
 public ResponseEntity<LoginResponse> login(
        @Valid @RequestBody LoginRequest request) {
