@@ -1,66 +1,82 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.rest.RestAPis.service;
 
-/**
- *
- * @author Pravin Prajapati
- */
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
-    
-    @Value("${spring.mail.host}")
-private String host;
+    @Value("${brevo.sender.email}")
+    private String senderEmail;
 
-@Value("${spring.mail.port}")
-private String port;
+    @Value("${brevo.sender.name}")
+    private String senderName;
 
-@Value("${spring.mail.username}")
-private String username;
+    public void sendOtp(String toEmail, String otp) {
 
-@PostConstruct
-public void checkMailConfig() {
-    System.out.println("HOST = " + host);
-    System.out.println("PORT = " + port);
-    System.out.println("USERNAME = " + username);
-}
-    
-    
-    
-   public void sendOtp(String toEmail, String otp) {
+        try {
 
-    try {
+            JSONObject body = new JSONObject();
 
-        System.out.println("Sending OTP to: " + toEmail);
+            JSONObject sender = new JSONObject();
+            sender.put("name", senderName);
+            sender.put("email", senderEmail);
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject("Book Review System - Email Verification");
-        message.setText("Your OTP is: " + otp);
+            body.put("sender", sender);
 
-        System.out.println("Before mailSender.send()");
+            JSONArray to = new JSONArray();
 
-        mailSender.send(message);
+            JSONObject recipient = new JSONObject();
+            recipient.put("email", toEmail);
 
-        System.out.println("After mailSender.send()");
-        System.out.println("Email sent successfully.");
+            to.put(recipient);
 
-    } catch (Exception e) {
-        System.out.println("EMAIL ERROR");
-        e.printStackTrace();
+            body.put("to", to);
+
+            body.put("subject", "Book Review System - OTP Verification");
+
+            body.put("htmlContent",
+                    "<h2>Email Verification</h2>"
+                    + "<p>Your OTP is:</p>"
+                    + "<h1>" + otp + "</h1>"
+                    + "<p>This OTP will expire in 10 minutes.</p>");
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("accept", "application/json")
+                    .header("content-type", "application/json")
+                    .header("api-key", apiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Status Code : " + response.statusCode());
+            System.out.println("Response : " + response.body());
+
+            if (response.statusCode() == 201) {
+                System.out.println("Email sent successfully.");
+            } else {
+                throw new RuntimeException("Brevo Error : " + response.body());
+            }
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
-}
 }
